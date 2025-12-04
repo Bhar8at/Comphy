@@ -33,3 +33,5 @@ def std(data):
     """
     variance = var(data)
     return math.sqrt(variance)
+
+
