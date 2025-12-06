@@ -32,28 +32,34 @@ def newton_cotes_integration(f, a, b, N, method="trapezoidal"):
     y = f(x)
 
     weights = {
-            'trapezoidal': (1, [1], h/2),
-            'simpson13':   (2, [1, 4], h/3),
-            'simpson38':   (3, [1, 3, 3], 3 * h / 8),
-            'boole':       (4, [7, 32, 12, 32], 2 * h / 45)
+            # 'method': (n, [interior weights...], scaling_factor)
+            'trapezoidal': (1, [2], h / 2),
+            'simpson13':   (2, [4, 2], h / 3),
+            'simpson38':   (3, [3, 3, 2], 3 * h / 8),
+            'boole':       (4, [32, 12, 32, 14], 2 * h / 45)
         }
 
     if method not in weights:
             raise ValueError(f"Method '{method}' is not recognized. Choose from {list(weights.keys())}.")
 
-    n = weights[method][0]
+    n, w, scale = weights[method]
     if N % n != 0:
             raise ValueError(f"For method '{method}', N must be a multiple of {n}.")
 
-    integral = y[0] + y[-1]
-    w = weights[method][1]
-        
-    for i in range(0, N+1):
-            m = i % n
-            integral += w[m] * y[i]
+    # The endpoints have a weight of 1 for Trapezoidal and Simpson's 1/3.
+    # For Simpson's 3/8, it's 1. For Boole's, it's 7.
+    # A general approach is to sum the interior points and add the endpoints.
+    # The provided weights are for the interior points.
+    if method == 'boole':
+        integral = 7 * (y[0] + y[-1])
+    else:
+        integral = y[0] + y[-1]
 
-        # Final scaling factor
-    integral *= weights[method][2]
+    for i in range(1, N):
+        # Get the correct weight for the i-th interior point
+        integral += w[(i - 1) % n] * y[i]
+
+    integral *= scale
 
     return integral
 
@@ -94,5 +100,3 @@ if __name__ == '__main__':
     N_boole = 200
     result_boole = newton_cotes_integration(my_func, a, b, N_boole, method='boole')
     print(f"Boole's Rule (N={N_boole}):      {result_boole:.8f}, Error: {abs(result_boole - exact_value):.2e}")
-
-
